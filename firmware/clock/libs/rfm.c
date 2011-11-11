@@ -6,8 +6,8 @@
 // # This code is using the XXTEA crypto function adapted from jeelabs.org,    # 
 // # original written by Roger Needham and David Wheeler.                      # 
 // #############################################################################
-// #              Version: 2.0 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-10 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #              Version: 2.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 08-11 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -192,23 +192,7 @@
      if(((crc_temp>>8)&0x00FF)==rfm_buffer[(rfm_len-1)]&&(crc_temp&0x00FF)==rfm_buffer[rfm_len]&&(((rfm_len-2)%4)==0)) // CRC and len ok?
       {
        xxtea_decrypt( (uint32_t*) (rfm_buffer+1), ((rfm_len-2)/4) );
-       if(rfm_buffer[1]>0&&rfm_buffer[2]==0) // SRC and DST ok?
-        {
-       
-         /* TODO: handle recieved packet here! */
-
-         /*
-         // DEBUG
-         uint8_t i;
-         for(i=0; i<=rfm_len; i++) 
-          {
-           PutChar(rfm_buffer[i]);
-          }
-         PutChar('\r');
-         PutChar('\n');
-         */
-         
-        }
+       /* TODO: handle recieved packet here! */
       } 
       rfm_status = RF12_STATUS_RECV_INIT;
       
@@ -228,8 +212,6 @@
         repeat=5;
         TIMSK |= (1<<TOIE0);
         rfm_status = RF12_STATUS_SEND_AM;
-       } else {
-        rfm_status = RF12_STATUS_IDLE;
        }
       break;      
      case RF12_STATUS_SEND_AM:
@@ -250,8 +232,8 @@
   }
 
 
- // --- Switch on wireless plug ---
- void wireless_switch( uint8_t housecode, uint8_t code, uint8_t state )
+ // --- Switch on wireless plug (Kangtai) ---
+ void wireless_switch_2( uint8_t housecode, uint8_t code, uint8_t state )
   {
    uint8_t i;
    // Calculate pulses for buffer: 0 -> short, 1 -> long
@@ -289,6 +271,49 @@
          }        
        }
     } 
+   rfm_status = RF12_STATUS_INIT_AM;
+  }
+
+
+ // --- Switch on wireless plug (Duewi) ---
+ void wireless_switch_4( uint8_t housecode, uint8_t code, uint8_t state )
+  {
+   uint8_t i;
+   // Calculate pulses for buffer: 0 -> short, 1 -> long
+   // where 00 = logical 0, 01 = floating, 11 = logical 1
+   for(i=0; i<24; i++)
+    {
+     if(i<=7)                                    // housecode 0-15 (A-P)
+      {
+       if(housecode&(1<<(i/2))) 
+        {
+         // 1 which means floating = 01 
+         if(i&0x01) buffer[i/8] |= (0x80>>(i%8)); else buffer[i/8] &= ~(0x80>>(i%8));
+        } else {
+         // 0 which means switch to ground = 00
+         buffer[i/8] &= ~(0x80>>(i%8));
+        }      
+      } else if(i<=15)                           // code 0-15
+       {
+        if(code&(1<<((i-8)/2))) 
+         {
+          // 1 which means floating = 01 
+          if(i&0x01) buffer[i/8] |= (0x80>>(i%8)); else buffer[i/8] &= ~(0x80>>(i%8));
+         } else {
+          // 0 which means switch to ground = 00
+          buffer[i/8] &= ~(0x80>>(i%8));
+         }
+       } else {                                  // state
+        if(state&(1<<((i-16)/2))) 
+         {
+          // 1 which means floating = 01 
+          if(i&0x01) buffer[i/8] |= (0x80>>(i%8)); else buffer[i/8] &= ~(0x80>>(i%8));
+         } else {
+          // 0 which means switch to ground = 00
+          buffer[i/8] &= ~(0x80>>(i%8));
+         }        
+       }
+    }
    rfm_status = RF12_STATUS_INIT_AM;
   }
 
@@ -391,7 +416,7 @@
       {  
        if(!(counter&0x01)) // Last bit: 0 = TX on, 1 = TX off
         {
-         rf12_trans(RF12_PM|(1<<RF12_EX)|(1<<RF12_ES)|(1<<RF12_ET));
+         rf12_trans(0x8238);
          if(buffer[counter/16]&mask) // First bit in buffer 0 = short pulse, 1 = long pulse
           {
            TCNT0 = PRELOAD_LONG_PULSE;
@@ -399,7 +424,7 @@
            TCNT0 = PRELOAD_SHORT_PULSE;        
           }
         } else {
-         rf12_trans(RF12_PM|(1<<RF12_EX));
+         rf12_trans(0x8208);
          if(buffer[counter/16]&mask) // First bit in buffer 0 = long break, 1 = short break
           {
            TCNT0 = PRELOAD_SHORT_PULSE;
@@ -411,12 +436,12 @@
       } else {
        if(counter==48)
         {
-         rf12_trans(RF12_PM|(1<<RF12_EX)|(1<<RF12_ES)|(1<<RF12_ET)); // Sync pattern short pulse
+         rf12_trans(0x8238); // Sync pattern short pulse
          TCNT0 = PRELOAD_SHORT_PULSE;
         } else
          if(counter==49)
           {
-           rf12_trans(RF12_PM|(1<<RF12_EX)); // Sync pattern break
+           rf12_trans(0x8208); // Sync pattern break
           }
        TCNT0 = PRELOAD_SHORT_PULSE;
       }

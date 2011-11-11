@@ -3,8 +3,8 @@
 // #############################################################################
 // # ui.c - User interface                                                     #
 // #############################################################################
-// #              Version: 2.0 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-10 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #              Version: 2.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 08-11 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -59,7 +59,7 @@
  uint8_t eeDelimiter_m EEMEM;
  uint8_t eeWirelessFunction EEMEM;
  uint8_t eeWirelessDcf EEMEM;
- uint8_t eeWirelessAlarmOn EEMEM;
+ uint8_t eeWirelessAlarmMode_On EEMEM;
  uint8_t eeWirelessAlarmOff EEMEM;
  uint8_t eeRemoteAddr EEMEM;
  uint8_t eeRemoteCode EEMEM;
@@ -84,6 +84,7 @@
    uint8_t outhigh = 0;
    uint8_t outlow = 0;
    uint8_t outsign = 0;
+   uint16_t outvalid = 0;
    uint8_t alarm_tmp = 0; 
    uint8_t moon = 0;
    uint8_t dim;
@@ -99,7 +100,7 @@
    uint8_t wireless_function;
    uint8_t wireless_switch_flag=0;   
    uint8_t wireless_dcf;
-   uint8_t wireless_alarm_on;
+   uint8_t wireless_alarm_mode_on;
    uint8_t wireless_alarm_off;
    uint16_t wireless_alarm_off_timer=0;
    uint8_t remote_addr;
@@ -251,11 +252,11 @@
      eeprom_write_byte(&eeWirelessDcf, wireless_dcf);
     }
 
-   wireless_alarm_on = eeprom_read_byte(&eeWirelessAlarmOn);
-   if(wireless_alarm_on>1)
+   wireless_alarm_mode_on = eeprom_read_byte(&eeWirelessAlarmMode_On);
+   if(wireless_alarm_mode_on>3)
     {
-     wireless_alarm_on=0;
-     eeprom_write_byte(&eeWirelessAlarmOn, wireless_alarm_on);
+     wireless_alarm_mode_on=0;
+     eeprom_write_byte(&eeWirelessAlarmMode_On, wireless_alarm_mode_on);
     }
     
    wireless_alarm_off = eeprom_read_byte(&eeWirelessAlarmOff);
@@ -273,7 +274,7 @@
     }
 
    remote_code = eeprom_read_byte(&eeRemoteCode);
-   if(remote_code>4)
+   if(remote_code>15)
     {
      remote_code=0;
      eeprom_write_byte(&eeRemoteCode, remote_code);
@@ -324,6 +325,8 @@
        moon = 0xFF;
        // Timer for wireless plug auto switch off
        if(wireless_alarm_off_timer>0) wireless_alarm_off_timer--;
+       // Timer for valid data from wireless temperature sensor
+       if(outvalid>0) outvalid--;
       }
 
      // If this is a new alarm, enable wireless plug if needed
@@ -331,7 +334,7 @@
      // timer to switch off the plug if alarm and snooze is finished!
      if(AlarmWait())
       {
-       if(wireless_alarm_on==0)
+       if(!wireless_alarm_mode_on&(1<<0))
         {
          // Plug disabled
          AlarmSetInitFinished();
@@ -340,13 +343,14 @@
          if(wireless_switch_flag==0||wireless_switch_flag==2)
           {
            wireless_switch_flag=1;
-           wireless_switch( remote_addr, remote_code, PLUG_SWITCH_ON );  
+           if(!(wireless_alarm_mode_on&(1<<1))) wireless_switch_2( remote_addr, remote_code, PLUG_SWITCH_2_ON );
+            else wireless_switch_4( remote_addr, remote_code, PLUG_SWITCH_4_ON );  
           } else {
            if(!wireless_switch_running()) AlarmSetInitFinished();          
           }
         }
       } else {
-       if(wireless_alarm_on!=0&&wireless_alarm_off!=0) // Switch on function enabled and switch off function enabled
+       if(wireless_alarm_mode_on&(1<<0)&&wireless_alarm_off!=0) // Switch on function enabled and switch off function enabled
         {
          if(!CanDisableAlarm()) // Alarm / snooze not running anymore
           {
@@ -358,7 +362,8 @@
              {
               if(wireless_alarm_off_timer==0) // Timer zero?
                {
-                wireless_switch( remote_addr, remote_code, PLUG_SWITCH_OFF );
+                if(!(wireless_alarm_mode_on&(1<<1))) wireless_switch_2( remote_addr, remote_code, PLUG_SWITCH_2_OFF );
+                 else wireless_switch_4( remote_addr, remote_code, PLUG_SWITCH_4_OFF );
                 wireless_switch_flag=0;
                }              
              }
@@ -393,16 +398,24 @@
         segdata[7]=46;
         segdata[8]=22;
         if(keys & (1<<KEY_OK)) { if(CanDisableAlarm()) { DisableAlarm(); } keys |= (1<<KEY_HANDLED); }
-        if(keys & (1<<KEY_PLUS)) { menue++; keys |= (1<<KEY_HANDLED); }
+        if(keys & (1<<KEY_PLUS)) { if(outvalid!=0) { menue++; } else { menue +=2; } keys |= (1<<KEY_HANDLED); }
         if(keys & (1<<KEY_MINUS)) { menue--; keys |= (1<<KEY_HANDLED); }
         break;
        case 2:
         // Screen #02 OUT Temperature +xx.x °C
         segdata[1]=34;
         segdata[2]=40;
-        if( outsign ) segdata[3]=49; else segdata[3]=59;
-        DisplayConvertDot( outhigh, ( void* ) segdata+4, ( void* ) segdata+5 );
-        segdata[6]=outlow;
+        if( outvalid != 0)
+         {
+          if( outsign ) segdata[3]=49; else segdata[3]=59;
+          DisplayConvertDot( outhigh, ( void* ) segdata+4, ( void* ) segdata+5 );
+          segdata[6]=outlow;
+         } else {
+          segdata[3]=59;
+          segdata[4]=49;
+          segdata[5]=56;
+          segdata[6]=49;
+         }
         segdata[7]=46;
         segdata[8]=22;
         if(keys & (1<<KEY_OK)) { if(CanDisableAlarm()) { DisableAlarm(); } keys |= (1<<KEY_HANDLED); }
@@ -417,7 +430,7 @@
         DisplayConvert( year, ( void* ) segdata+7, ( void* ) segdata+8 );
         if(keys & (1<<KEY_OK)) { if(CanDisableAlarm()) { DisableAlarm(); } keys |= (1<<KEY_HANDLED); }
         if(keys & (1<<KEY_PLUS)) { menue++; keys |= (1<<KEY_HANDLED); }
-        if(keys & (1<<KEY_MINUS)) { menue--; keys |= (1<<KEY_HANDLED); }
+        if(keys & (1<<KEY_MINUS)) { if(outvalid!=0) { menue--; } else { menue -=2; } keys |= (1<<KEY_HANDLED); }
         break;
        case 4:
         // Screen #04 Moon phase
@@ -436,23 +449,25 @@
         break;
        case 5:
         // Screen #05 Alarm off/1/2/3/4
-        segdata[1]=59;
-        segdata[2]=20;
-        segdata[3]=31;
         if(alarm!=0) 
          { 
-          segdata[4]=alarm;
-          segdata[5]=59;
-          segdata[6]=34;
-          segdata[7]=33; 
+          segdata[1]=20;
+          segdata[2]=31;
+          segdata[3]=alarm;
+          segdata[4]=59;
+          DisplayConvertDot( alrm[alarm-1].hour, ( void* ) segdata+5, ( void* ) segdata+6 );
+          DisplayConvert( alrm[alarm-1].min, ( void* ) segdata+7, ( void* ) segdata+8 );                     
          } else {
+          segdata[1]=59;
+          segdata[2]=20;
+          segdata[3]=31;
           segdata[4]=59;
           segdata[5]=34;
           segdata[6]=25;
           segdata[7]=25; 
+          segdata[8]=59;
          }
-        segdata[8]=59;
-        if(keys & (1<<KEY_OK)) { if(CanDisableAlarm()) { DisableAlarm(); } else { alarm++; if(alarm>4) alarm=0; eeprom_write_byte(&eeAlarm, alarm); } keys |= (1<<KEY_HANDLED); }
+        if(keys & (1<<KEY_OK)) { if(CanDisableAlarm()) { DisableAlarm(); } else { if(keys & (1<<KEY_HOLD)) { alarm=0; } else { alarm++; if(alarm>4) alarm=0; } eeprom_write_byte(&eeAlarm, alarm); } keys |= (1<<KEY_LONG); keys |= (1<<KEY_HANDLED); }
         if(keys & (1<<KEY_PLUS)) { menue++; keys |= (1<<KEY_HANDLED); }
         if(keys & (1<<KEY_MINUS)) { menue--; keys |= (1<<KEY_HANDLED); }		  
         break; 
@@ -506,40 +521,40 @@
           case 1:
            // Choose one of four alarm times to modify
            segdata[1]=20;
-           if(blink==0) segdata[2]=alarm_tmp; else segdata[2]=59;           
-           segdata[3]=59;
-           DisplayConvert( alrm[alarm_tmp-1].hour, ( void* ) segdata+4, ( void* ) segdata+5 );
-           segdata[6]=delimiter_convert_h(delimiter_h);
+           segdata[2]=31;
+           if(blink==0) segdata[3]=alarm_tmp; else segdata[3]=59;           
+           segdata[4]=59;
+           DisplayConvertDot( alrm[alarm_tmp-1].hour, ( void* ) segdata+5, ( void* ) segdata+6 );
            DisplayConvert( alrm[alarm_tmp-1].min, ( void* ) segdata+7, ( void* ) segdata+8 );
            if(keys & (1<<KEY_OK)) { submenue++; if(alarm_tmp==alarm) alarm=0; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(alarm_tmp<4) { alarm_tmp++; } else { alarm_tmp=1; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(alarm_tmp>1) { alarm_tmp--; } else { alarm_tmp=4; } keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_PLUS)) { if(alarm_tmp<4) { alarm_tmp++; } else { alarm_tmp=1; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(alarm_tmp>1) { alarm_tmp--; } else { alarm_tmp=4; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
            break;
           case 2:
            // Set hours
            segdata[1]=20;
-           segdata[2]=alarm_tmp;           
-           segdata[3]=59;
+           segdata[2]=31;
+           segdata[3]=alarm_tmp;           
+           segdata[4]=59;
            if(blink==0)
             {
-             DisplayConvert( alrm[alarm_tmp-1].hour, ( void* ) segdata+4, ( void* ) segdata+5 );
+             DisplayConvertDot( alrm[alarm_tmp-1].hour, ( void* ) segdata+5, ( void* ) segdata+6 );
             } else {
-             segdata[4]=59;
              segdata[5]=59;
+             segdata[6]=55;
             }
-           segdata[6]=delimiter_convert_h(delimiter_h);
            DisplayConvert( alrm[alarm_tmp-1].min, ( void* ) segdata+7, ( void* ) segdata+8 );
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(alrm[alarm_tmp-1].hour<23) { alrm[alarm_tmp-1].hour++; } else { alrm[alarm_tmp-1].hour=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(alrm[alarm_tmp-1].hour>0) { alrm[alarm_tmp-1].hour--; } else { alrm[alarm_tmp-1].hour=23; } keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_PLUS)) { if(alrm[alarm_tmp-1].hour<23) { alrm[alarm_tmp-1].hour++; } else { alrm[alarm_tmp-1].hour=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(alrm[alarm_tmp-1].hour>0) { alrm[alarm_tmp-1].hour--; } else { alrm[alarm_tmp-1].hour=23; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
            break;
           case 3:
            // Set minutes
            segdata[1]=20;
-           segdata[2]=alarm_tmp;           
-           segdata[3]=59;
-           DisplayConvert( alrm[alarm_tmp-1].hour, ( void* ) segdata+4, ( void* ) segdata+5 );
-           segdata[6]=delimiter_convert_h(delimiter_h);
+           segdata[2]=31;
+           segdata[3]=alarm_tmp;           
+           segdata[4]=59;
+           DisplayConvertDot( alrm[alarm_tmp-1].hour, ( void* ) segdata+5, ( void* ) segdata+6 );
            if(blink==0)
             {
              DisplayConvert( alrm[alarm_tmp-1].min, ( void* ) segdata+7, ( void* ) segdata+8 );
@@ -548,8 +563,8 @@
              segdata[8]=59;
             }
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(alrm[alarm_tmp-1].min<59) { alrm[alarm_tmp-1].min++; } else { alrm[alarm_tmp-1].min=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(alrm[alarm_tmp-1].min>0) { alrm[alarm_tmp-1].min--; } else { alrm[alarm_tmp-1].min=59; } keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_PLUS)) { if(alrm[alarm_tmp-1].min<59) { alrm[alarm_tmp-1].min++; } else { alrm[alarm_tmp-1].min=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(alrm[alarm_tmp-1].min>0) { alrm[alarm_tmp-1].min--; } else { alrm[alarm_tmp-1].min=59; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
            break;
           case 4:
            // Save to eep
@@ -604,8 +619,8 @@
              }
            segdata[8]=59;
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(wsound<(sounds)) { wsound++; } else { wsound=0; } if(wsound!=0) PlaySound(wsound-1); else PlaySound(GetRandom()); keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(wsound>0) { wsound--; } else { wsound=(sounds); } if(wsound!=0) PlaySound(wsound-1); else PlaySound(GetRandom()); keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_PLUS)) { if(wsound<(sounds)) { wsound++; } else { wsound=0; } if(wsound!=0) PlaySound(wsound-1); else PlaySound(GetRandom()); keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(wsound>0) { wsound--; } else { wsound=(sounds); } if(wsound!=0) PlaySound(wsound-1); else PlaySound(GetRandom()); keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
            break;
           case 2:
            eeprom_write_byte(&eeWsound, wsound);
@@ -643,11 +658,12 @@
            segdata[4]=59;
            if(blink==0) segdata[5]=volume; else segdata[5]=59;
            segdata[6]=59;
+
            segdata[7]=59;
            segdata[8]=59;           
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(volume<7) { volume++; SetVolume(volume); PlayNumber(volume); } else { volume=7; SetVolume(volume); PlayNumber(volume); } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(volume>0) { volume--; SetVolume(volume); PlayNumber(volume); } else { volume=0; SetVolume(volume); PlayNumber(volume); } keys |= (1<<KEY_HANDLED); }           
+           if(keys & (1<<KEY_PLUS)) { if(volume<7) { volume++; SetVolume(volume); PlayNumber(volume); if(volume<7) keys |= (1<<KEY_REPEAT); } else { volume=7; SetVolume(volume); PlayNumber(volume); } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(volume>0) { volume--; SetVolume(volume); PlayNumber(volume); if(volume>0) keys |= (1<<KEY_REPEAT); } else { volume=0; SetVolume(volume); PlayNumber(volume); } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }           
            break;
           case 2:
            // Save to eep
@@ -692,8 +708,8 @@
            segdata[6]=delimiter_convert_m(delimiter_m);
            DisplayConvert( sec_tmp, ( void* ) segdata+7, ( void* ) segdata+8 );
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(hour_tmp<23) { hour_tmp++; } else { hour_tmp=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(hour_tmp>0) { hour_tmp--; } else { hour_tmp=23; } keys |= (1<<KEY_HANDLED); }           
+           if(keys & (1<<KEY_PLUS)) { if(hour_tmp<23) { hour_tmp++; } else { hour_tmp=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(hour_tmp>0) { hour_tmp--; } else { hour_tmp=23; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }           
            break;
           case 2:
            // Setup min
@@ -709,8 +725,8 @@
            segdata[6]=delimiter_convert_m(delimiter_m);
            DisplayConvert( sec_tmp, ( void* ) segdata+7, ( void* ) segdata+8 );
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(min_tmp<59) { min_tmp++; } else { min_tmp=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(min_tmp>0) { min_tmp--; } else { min_tmp=59; } keys |= (1<<KEY_HANDLED); }           
+           if(keys & (1<<KEY_PLUS)) { if(min_tmp<59) { min_tmp++; } else { min_tmp=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(min_tmp>0) { min_tmp--; } else { min_tmp=59; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }           
            break;
           case 3:
            // Setup sec
@@ -726,8 +742,8 @@
              segdata[8]=59;
             }
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(sec_tmp<59) { sec_tmp++; } else { sec_tmp=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(sec_tmp>0) { sec_tmp--; } else { sec_tmp=59; } keys |= (1<<KEY_HANDLED); }           
+           if(keys & (1<<KEY_PLUS)) { if(sec_tmp<59) { sec_tmp++; } else { sec_tmp=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(sec_tmp>0) { sec_tmp--; } else { sec_tmp=59; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }           
            break;
           case 4:
            // Save to RTC
@@ -771,8 +787,8 @@
            DisplayConvertDot( mon_tmp, ( void* ) segdata+5, ( void* ) segdata+6 );
            DisplayConvert( year_tmp, ( void* ) segdata+7, ( void* ) segdata+8 );
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(wday_tmp<7) { wday_tmp++; } else { wday_tmp=1; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(wday_tmp>1) { wday_tmp--; } else { wday_tmp=7; } keys |= (1<<KEY_HANDLED); }           
+           if(keys & (1<<KEY_PLUS)) { if(wday_tmp<7) { wday_tmp++; } else { wday_tmp=1; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(wday_tmp>1) { wday_tmp--; } else { wday_tmp=7; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }           
            break;
           case 2:
            // Setup day
@@ -787,8 +803,8 @@
            DisplayConvertDot( mon_tmp, ( void* ) segdata+5, ( void* ) segdata+6 );
            DisplayConvert( year_tmp, ( void* ) segdata+7, ( void* ) segdata+8 );
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(day_tmp<31) { day_tmp++; } else { day_tmp=1; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(day_tmp>1) { day_tmp--; } else { day_tmp=31; } keys |= (1<<KEY_HANDLED); }           
+           if(keys & (1<<KEY_PLUS)) { if(day_tmp<31) { day_tmp++; } else { day_tmp=1; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(day_tmp>1) { day_tmp--; } else { day_tmp=31; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }           
            break;
           case 3:
            // Setup month
@@ -803,8 +819,8 @@
             }
            DisplayConvert( year_tmp, ( void* ) segdata+7, ( void* ) segdata+8 );
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(mon_tmp<12) { mon_tmp++; } else { mon_tmp=1; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(mon_tmp>1) { mon_tmp--; } else { mon_tmp=12; } keys |= (1<<KEY_HANDLED); }           
+           if(keys & (1<<KEY_PLUS)) { if(mon_tmp<12) { mon_tmp++; } else { mon_tmp=1; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(mon_tmp>1) { mon_tmp--; } else { mon_tmp=12; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }           
            break;
           case 4:
            // Setup year
@@ -819,8 +835,8 @@
              segdata[8]=59;
             }
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(year_tmp<99) { year_tmp++; } else { year_tmp=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(year_tmp>0) { year_tmp--; } else { year_tmp=99; } keys |= (1<<KEY_HANDLED); }           
+           if(keys & (1<<KEY_PLUS)) { if(year_tmp<99) { year_tmp++; } else { year_tmp=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(year_tmp>0) { year_tmp--; } else { year_tmp=99; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }           
            break;
           case 5:
            // Save to RTC
@@ -858,8 +874,8 @@
            segdata[6]=delimiter_convert_m(delimiter_m);
            DisplayConvert( sec, ( void* ) segdata+7, ( void* ) segdata+8 );          
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(delimiter_h<7) { delimiter_h++; } else { delimiter_h=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(delimiter_h>0) { delimiter_h--; } else { delimiter_h=7; } keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_PLUS)) { if(delimiter_h<7) { delimiter_h++; } else { delimiter_h=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(delimiter_h>0) { delimiter_h--; } else { delimiter_h=7; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
            break;
           case 2:
            DisplayConvert( hour, ( void* ) segdata+1, ( void* ) segdata+2 );
@@ -868,8 +884,8 @@
            if(blink==0) segdata[6]=delimiter_convert_m(delimiter_m); else segdata[6]=59;
            DisplayConvert( sec, ( void* ) segdata+7, ( void* ) segdata+8 );          
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(delimiter_m<7) { delimiter_m++; } else { delimiter_m=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(delimiter_m>0) { delimiter_m--; } else { delimiter_m=7; } keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_PLUS)) { if(delimiter_m<7) { delimiter_m++; } else { delimiter_m=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(delimiter_m>0) { delimiter_m--; } else { delimiter_m=7; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
            break;
           case 3:
            eeprom_write_byte(&eeDelimiter_h, delimiter_h);
@@ -910,8 +926,8 @@
            segdata[7]=33;
            segdata[8]=59;
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(min_tmp<10) { min_tmp++; } else { min_tmp=1; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(min_tmp>1) { min_tmp--; } else { min_tmp=10; } keys |= (1<<KEY_HANDLED); }        
+           if(keys & (1<<KEY_PLUS)) { if(min_tmp<10) { min_tmp++; } else { min_tmp=1; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(min_tmp>1) { min_tmp--; } else { min_tmp=10; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }        
            break;
           case 2:
            alarmtime=min_tmp;
@@ -945,8 +961,8 @@
             }
            segdata[8]=59;
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(min_tmp<10) { min_tmp++; } else { min_tmp=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(min_tmp>0) { min_tmp--; } else { min_tmp=10; } keys |= (1<<KEY_HANDLED); }        
+           if(keys & (1<<KEY_PLUS)) { if(min_tmp<10) { min_tmp++; } else { min_tmp=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(min_tmp>0) { min_tmp--; } else { min_tmp=10; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }        
            break;
           case 4:
            snoozetime=min_tmp;
@@ -963,8 +979,8 @@
            if(blink==0) DisplayConvertNoZero( min_tmp, ( void* ) segdata+6, ( void* ) segdata+7 ); else { segdata[6]=59; segdata[7]=59; }
            segdata[8]=59;
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(min_tmp<10) { min_tmp++; } else { min_tmp=2; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(min_tmp>2) { min_tmp--; } else { min_tmp=10; } keys |= (1<<KEY_HANDLED); }        
+           if(keys & (1<<KEY_PLUS)) { if(min_tmp<10) { min_tmp++; } else { min_tmp=2; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(min_tmp>2) { min_tmp--; } else { min_tmp=10; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }        
            break;
           case 6: 
            tries=min_tmp;
@@ -1005,6 +1021,7 @@
             {
              segdata[5]=34;
              if(wireless_function!=0) { segdata[6]=33; segdata[7]=59; } else { segdata[6]=25; segdata[7]=25; }
+
             } else {
              segdata[5]=59;
              segdata[6]=59;
@@ -1012,8 +1029,8 @@
             }
            segdata[8]=59;
            if(keys & (1<<KEY_OK)) { eeprom_write_byte(&eeWirelessFunction, wireless_function); SetWireless(wireless_function); if(wireless_function==0) { submenue=0; } else { submenue++; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(wireless_function==0) { wireless_function=1; } else { wireless_function=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(wireless_function==0) { wireless_function=1; } else { wireless_function=0; } keys |= (1<<KEY_HANDLED); }           
+           if(keys & (1<<KEY_PLUS)) { if(wireless_function==0) { wireless_function=1; } else { wireless_function=0; } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(wireless_function==0) { wireless_function=1; } else { wireless_function=0; } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }           
            break;
           case 2:
            // Recieve DCF time via wireless
@@ -1032,8 +1049,8 @@
             }
            segdata[8]=59;
            if(keys & (1<<KEY_OK)) { eeprom_write_byte(&eeWirelessDcf, wireless_dcf); submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(wireless_dcf==0) { wireless_dcf=1; } else { wireless_dcf=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(wireless_dcf==0) { wireless_dcf=1; } else { wireless_dcf=0; } keys |= (1<<KEY_HANDLED); }  
+           if(keys & (1<<KEY_PLUS)) { if(wireless_dcf==0) { wireless_dcf=1; } else { wireless_dcf=0; } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(wireless_dcf==0) { wireless_dcf=1; } else { wireless_dcf=0; } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }  
            submenue++; /* TODO: dont skip this if implemented later ;-) */         
            break;
           case 3:
@@ -1044,16 +1061,16 @@
            segdata[4]=59;
            if(blink==0)
             {
-             if(wireless_alarm_on!=0) { segdata[5]=44; segdata[6]=24; segdata[7]=38; } else { segdata[5]=33; segdata[6]=34; segdata[7]=59; }
+             if(wireless_alarm_mode_on&(1<<0)) { segdata[5]=44; segdata[6]=24; segdata[7]=38; } else { segdata[5]=33; segdata[6]=34; segdata[7]=59; }
             } else {
              segdata[5]=59;
              segdata[6]=59;
              segdata[7]=59;
             }
            segdata[8]=59;
-           if(keys & (1<<KEY_OK)) { eeprom_write_byte(&eeWirelessAlarmOn, wireless_alarm_on); submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(wireless_alarm_on==0) { wireless_alarm_on=1; } else { wireless_alarm_on=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(wireless_alarm_on==0) { wireless_alarm_on=1; } else { wireless_alarm_on=0; } keys |= (1<<KEY_HANDLED); }           
+           if(keys & (1<<KEY_OK)) { eeprom_write_byte(&eeWirelessAlarmMode_On, wireless_alarm_mode_on); if(wireless_alarm_mode_on&(1<<0)) submenue++; else submenue+=5; keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_PLUS)) { if(!(wireless_alarm_mode_on&(1<<0))) { wireless_alarm_mode_on |= (1<<0); } else { wireless_alarm_mode_on &= ~(1<<0); } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(!(wireless_alarm_mode_on&(1<<0))) { wireless_alarm_mode_on |= (1<<0); } else { wireless_alarm_mode_on &= ~(1<<0); } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }           
            break;
           case 4:
            // Wireless plug switch off time after alarm
@@ -1079,34 +1096,77 @@
             }
            segdata[8]=59;
            if(keys & (1<<KEY_OK)) { eeprom_write_byte(&eeWirelessAlarmOff, wireless_alarm_off); submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(wireless_alarm_off<30) { wireless_alarm_off++; } else { wireless_alarm_off=0; }  keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(wireless_alarm_off>0) { wireless_alarm_off--; } else { wireless_alarm_off=30; }  keys |= (1<<KEY_HANDLED); }            
+           if(keys & (1<<KEY_PLUS)) { if(wireless_alarm_off<30) { wireless_alarm_off++; } else { wireless_alarm_off=0; }  keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(wireless_alarm_off>0) { wireless_alarm_off--; } else { wireless_alarm_off=30; }  keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
            break;
           case 5:
+           // Wireless plug protocol mode (A = Kangtai / B = Duewi)
+           segdata[1]=37;
+           segdata[2]=32;
+           segdata[3]=34;           
+           segdata[4]=23;           
+           segdata[5]=24;           
+           segdata[6]=59;           
+           if(blink==0)
+            {
+             if(!(wireless_alarm_mode_on&(1<<1))) segdata[7]=20; else segdata[7]=21;
+            } else {
+             segdata[7]=59;
+            }
+           segdata[8]=59;
+           if(keys & (1<<KEY_OK)) { eeprom_write_byte(&eeWirelessAlarmMode_On, wireless_alarm_mode_on); if(!(wireless_alarm_mode_on&(1<<1))) { if(remote_code>4) remote_code=4; eeprom_write_byte(&eeRemoteCode, remote_code); } else { if(remote_addr>15) remote_addr=15; eeprom_write_byte(&eeRemoteAddr, remote_addr); } submenue++; keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_PLUS)) { if(!(wireless_alarm_mode_on&(1<<1))) { wireless_alarm_mode_on |= (1<<1); } else { wireless_alarm_mode_on &= ~(1<<1); } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(!(wireless_alarm_mode_on&(1<<1))) { wireless_alarm_mode_on |= (1<<1); } else { wireless_alarm_mode_on &= ~(1<<1); } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }                          
+           break;
+          case 6:
            // Wireless remote socket address
            segdata[1]=37;
            segdata[2]=20;
            segdata[3]=23;           
            segdata[4]=59;
-           if(blink==0) DisplayConvert( remote_addr, ( void* ) segdata+5, ( void* ) segdata+6 ); else { segdata[5]=59; segdata[6]=59; }
-           segdata[7]=20+remote_code;
-           segdata[8]=59;
-           if(keys & (1<<KEY_OK)) { eeprom_write_byte(&eeRemoteAddr, remote_addr); submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(remote_addr<31) { remote_addr++; } else { remote_addr=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(remote_addr>0) { remote_addr--;} else { remote_addr=31; } keys |= (1<<KEY_HANDLED); } 
+           if(!(wireless_alarm_mode_on&(1<<1)))
+            {
+             // Kangtai
+             if(blink==0) DisplayConvert( remote_addr, ( void* ) segdata+5, ( void* ) segdata+6 ); else { segdata[5]=59; segdata[6]=59; }
+             segdata[7]=20+remote_code;
+             segdata[8]=59;
+             if(keys & (1<<KEY_OK)) { eeprom_write_byte(&eeRemoteAddr, remote_addr); submenue++; keys |= (1<<KEY_HANDLED); }
+             if(keys & (1<<KEY_PLUS)) { if(remote_addr<31) { remote_addr++; } else { remote_addr=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+             if(keys & (1<<KEY_MINUS)) { if(remote_addr>0) { remote_addr--;} else { remote_addr=31; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; } 
+            } else {
+             // Duewi
+             if(blink==0) segdata[5]=20+remote_addr; else segdata[5]=59;            
+             DisplayConvert( remote_code+1, ( void* ) segdata+6, ( void* ) segdata+7 );
+             segdata[8]=59;
+             if(keys & (1<<KEY_OK)) { eeprom_write_byte(&eeRemoteAddr, remote_addr); submenue++; keys |= (1<<KEY_HANDLED); }
+             if(keys & (1<<KEY_PLUS)) { if(remote_addr<15) { remote_addr++; } else { remote_addr=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+             if(keys & (1<<KEY_MINUS)) { if(remote_addr>0) { remote_addr--;} else { remote_addr=15; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }        
+            }
            break;
-          case 6:
+          case 7:
            // Wireless remote socket code
            segdata[1]=37;
            segdata[2]=20;
            segdata[3]=23;           
            segdata[4]=59;
-           DisplayConvert( remote_addr, ( void* ) segdata+5, ( void* ) segdata+6 );
-           if(blink==0) segdata[7]=20+remote_code; else segdata[7]=59;
-           segdata[8]=59;
-           if(keys & (1<<KEY_OK)) { eeprom_write_byte(&eeRemoteCode, remote_code); submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(remote_code<4) { remote_code++; } else { remote_code=0; } keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_MINUS)) { if(remote_code>0) { remote_code--;} else { remote_code=4; } keys |= (1<<KEY_HANDLED); } 
+           if(!(wireless_alarm_mode_on&(1<<1)))
+            {
+             // Kangtai
+             DisplayConvert( remote_addr, ( void* ) segdata+5, ( void* ) segdata+6 );
+             if(blink==0) segdata[7]=20+remote_code; else segdata[7]=59;
+             segdata[8]=59;
+             if(keys & (1<<KEY_OK)) { eeprom_write_byte(&eeRemoteCode, remote_code); submenue++; keys |= (1<<KEY_HANDLED); }
+             if(keys & (1<<KEY_PLUS)) { if(remote_code<4) { remote_code++; } else { remote_code=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+             if(keys & (1<<KEY_MINUS)) { if(remote_code>0) { remote_code--;} else { remote_code=4; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; } 
+            } else {
+             // Duewi
+             segdata[5]=20+remote_addr;
+             if(blink==0) DisplayConvert( remote_code+1, ( void* ) segdata+6, ( void* ) segdata+7 ); else { segdata[6]=59; segdata[7]=59; }
+             segdata[8]=59;
+             if(keys & (1<<KEY_OK)) { eeprom_write_byte(&eeRemoteCode, remote_code); submenue++; keys |= (1<<KEY_HANDLED); }
+             if(keys & (1<<KEY_PLUS)) { if(remote_code<15) { remote_code++; } else { remote_code=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+             if(keys & (1<<KEY_MINUS)) { if(remote_code>0) { remote_code--;} else { remote_code=15; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }          
+            }
            break;
           default:
            submenue = 0;
@@ -1271,7 +1331,6 @@
           {
            case 70:
             PlayNumber(uart);
-
             UDR = 43; // +: OK         
             break;
           }

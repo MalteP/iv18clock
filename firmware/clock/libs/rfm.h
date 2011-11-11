@@ -3,8 +3,8 @@
 // #############################################################################
 // # rfm.h - Header: RFM12 Wireless routines                                   #
 // #############################################################################
-// #              Version: 2.0 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-10 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #              Version: 2.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 08-11 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -96,13 +96,16 @@
  #define PRELOAD_SHORT_PULSE 215 // ~320us
  #define PRELOAD_LONG_PULSE  135 // ~950us 
  
- #define PLUG_SWITCH_ON  0x01
- #define PLUG_SWITCH_OFF 0x02
+ #define PLUG_SWITCH_2_ON  0x01
+ #define PLUG_SWITCH_2_OFF 0x02
+ #define PLUG_SWITCH_4_ON  0x0E
+ #define PLUG_SWITCH_4_OFF 0x06
  
  void InitRFM( void );
  void PollRFM( void );
  void SetWireless( uint8_t status );
- void wireless_switch( uint8_t housecode, uint8_t code, uint8_t state );
+ void wireless_switch_2( uint8_t housecode, uint8_t code, uint8_t state );
+ void wireless_switch_4( uint8_t housecode, uint8_t code, uint8_t state );
  uint8_t wireless_switch_running( void );
 
 #endif

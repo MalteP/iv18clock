@@ -3,8 +3,8 @@
 // #############################################################################
 // # alarm.c - Alarm handler                                                   #
 // #############################################################################
-// #              Version: 2.0 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-10 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #              Version: 2.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 08-11 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -123,7 +123,7 @@
            triescounter--;
            if(triescounter>0)
             {
-             if(IsPlaying()) AbortPlaying();
+             AbortPlaying();
              snoozetimer = snoozetime*60;
              alarmstatus=ALARM_STATUS_SNOOZE;
             } else {
@@ -143,7 +143,7 @@
        }    
       break;
      case ALARM_STATUS_DISABLE:
-       if(IsPlaying()) AbortPlaying();
+       AbortPlaying();
        alarmstatus=ALARM_STATUS_WAIT;
       break; 
      case ALARM_STATUS_WAIT:

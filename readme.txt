@@ -1,5 +1,5 @@
 IW18 Clock - Firmware for talking clock based on IW18 tube
-(c) 08-10 by Malte Pöggel <malte@maltepoeggel.de> - http://www.maltepoeggel.de
+(c) 08-11 by Malte Pöggel <malte@maltepoeggel.de> - http://www.maltepoeggel.de
 
 ==============================================================================
 

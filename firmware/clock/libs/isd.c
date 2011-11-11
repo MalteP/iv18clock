@@ -3,8 +3,8 @@
 // #############################################################################
 // # isd.c - ISD2590 speech handler                                            #
 // #############################################################################
-// #              Version: 2.0 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-10 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #              Version: 2.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 08-11 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -199,7 +199,7 @@
  // --- Abort playing now! ---
  void AbortPlaying( void )
   {
-   if(SpeechCounter!=0) 
+   if(SpeechCounter!=0||SpeechActive!=0) 
     {
      ISDOut(0);
      ISD_PowerDown();

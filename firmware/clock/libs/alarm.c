@@ -3,8 +3,8 @@
 // #############################################################################
 // # alarm.c - Alarm handler                                                   #
 // #############################################################################
-// #              Version: 2.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-11 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -78,20 +78,24 @@
 
 
  // --- Check if there is something to do ---
- void PollAlarm( uint8_t hour, uint8_t min, uint8_t wsound )
+ void PollAlarm( uint8_t hour, uint8_t min, uint8_t sec, uint8_t wsound )
   {
    uint8_t status_temp;
+   uint8_t i;
    // New alarm or some status change?  
    if(alarm>0)
     {
-     if(alrm[alarm-1].hour==hour&&alrm[alarm-1].min==min)
+     for(i=0; i<4; i++) // Compare alarm mask for all alarms
       {
-       if(alarmstatus==ALARM_STATUS_OFF) 
+       if(alarm&(1<<i)&&alrm[i].hour==hour&&alrm[i].min==min&&sec==0)
         {
-         alarmstatus = ALARM_STATUS_INIT;
-         predelay = 3; // Give other events 3 ticks time to initialize.
+         if(alarmstatus==ALARM_STATUS_OFF) 
+          {
+           alarmstatus = ALARM_STATUS_INIT;
+           predelay = 3; // Give other events 3 ticks time to initialize.
+          }
         }
-      }   
+      }
     } else {
      if(alarmstatus!=ALARM_STATUS_OFF) // Should not happen
       {
@@ -143,12 +147,17 @@
        }    
       break;
      case ALARM_STATUS_DISABLE:
-       AbortPlaying();
-       alarmstatus=ALARM_STATUS_WAIT;
+      AbortPlaying();
+      alarmstatus=ALARM_STATUS_WAIT;
       break; 
      case ALARM_STATUS_WAIT:
-       if(alrm[alarm-1].hour!=hour||alrm[alarm-1].min!=min) alarmstatus=ALARM_STATUS_OFF;
-      break;       
+      for(i=0; i<4; i++) // Compare alarm mask for all alarms
+       {
+        if(alarm&(1<<i)&&alrm[i].hour==hour&&alrm[i].min==min&&sec==0) return;
+       }
+      // Nothing matched, disable wait status
+      alarmstatus=ALARM_STATUS_OFF;
+      break;
     }
    // Power to the leds :-)
    if(alarmstatus==ALARM_STATUS_ON||alarmstatus==ALARM_STATUS_INIT)

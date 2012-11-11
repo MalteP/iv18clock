@@ -3,8 +3,8 @@
 // #############################################################################
 // # alarm.h - Header: Alarm handler                                           #
 // #############################################################################
-// #              Version: 2.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-11 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -28,7 +28,7 @@
  #define ALARM_STATUS_ON      2 // Alarm active
  #define ALARM_STATUS_SNOOZE  3 // Snooze active
  #define ALARM_STATUS_DISABLE 4 // Alarm should be disabled
- #define ALARM_STATUS_WAIT    5 // Alarm is disabled but hour and min matching choosen alarm time, so wait 1 minute to go by
+ #define ALARM_STATUS_WAIT    5 // Alarm is disabled but hour, min and sec matching choosen alarm time, so wait 1 second to go by
  
  typedef struct {
   uint8_t hour;
@@ -44,7 +44,7 @@
 
  void InitAlarm( void );
  void TickAlarm( void );
- void PollAlarm( uint8_t hour, uint8_t min, uint8_t wsound );
+ void PollAlarm( uint8_t hour, uint8_t min, uint8_t sec, uint8_t wsound );
  uint8_t AlarmWait( void );
  void AlarmSetInitFinished( void ); 
  uint8_t RunningAlarm( void );

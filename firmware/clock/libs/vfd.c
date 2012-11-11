@@ -3,8 +3,8 @@
 // #############################################################################
 // # vfd.c - VFD multiplexing and decoding handler                             #
 // #############################################################################
-// #              Version: 2.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-11 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -54,7 +54,7 @@
  #include "libs/portdef.h"
  #include "libs/vfdchar.h"
   
- uint8_t dim_on;
+ uint8_t dim_val;
 
 
  // --- Initialize vfd ports and interrupt ---
@@ -89,7 +89,7 @@
    segdata[7]=59;
    segdata[8]=59;
 
-   dim_on = 0;	
+   dim_val = 0;	
   }
 
   
@@ -105,7 +105,20 @@
    DISP_PRT_LOAD |= (1<<DISP_LOAD);                                         // Pulse LOAD pin
    DISP_PRT_LOAD &= ~(1<<DISP_LOAD);  
     
-   if( segcounter==0 ) { if(dim_on==1) segcounter=17; else segcounter=9; }  // Reset to nine if zero
+   // Dim function and segment counter reset
+   if( segcounter==0 )
+    {
+     segcounter = 9;                                                        // Reset to nine if zero
+     if( dimcounter==0 )
+      {
+       dimcounter = dim_val;
+       DISP_PRT_BLNK &= ~(1<<DISP_BLNK);
+      } else {
+       dimcounter--;
+       DISP_PRT_BLNK |= (1<<DISP_BLNK);
+      }
+    }
+   if(dim_val!=0) TCNT2 = 0xA0;                                             // Faster PWM if display dimmed
    segcounter--;                                                            // And decrement the counter by one
   }
 
@@ -171,7 +184,7 @@
  // --- Control display brightness ---
  void SetDim( uint8_t d )
   {
-   dim_on = d;
+   dim_val = d;
   }
 
   

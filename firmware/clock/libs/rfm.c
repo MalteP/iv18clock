@@ -6,8 +6,8 @@
 // # This code is using the XXTEA crypto function adapted from jeelabs.org,    # 
 // # original written by Roger Needham and David Wheeler.                      # 
 // #############################################################################
-// #              Version: 2.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-11 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -59,7 +59,6 @@
  volatile uint8_t mask;
  volatile uint8_t buffer[3];
  volatile uint8_t repeat; 
-
 
  // --- Send via spi ---
  uint16_t rf12_trans(uint16_t wert)
@@ -194,12 +193,11 @@
        xxtea_decrypt( (uint32_t*) (rfm_buffer+1), ((rfm_len-2)/4) );
        /* TODO: handle recieved packet here! */
       } 
-      rfm_status = RF12_STATUS_RECV_INIT;
-      
+      rfm_status = RF12_STATUS_RECV_INIT;   
       break;
      case RF12_STATUS_DISABLE:
-      rf12_trans(RF12_PM|(1<<RF12_EX)|(1<<RF12_DC));                                      // RX off       
-      GICR &= ~(1<<INT0);
+      GICR &= ~(1<<INT0);                                                                  // Disable interrupt
+      rf12_trans(RF12_PM|(1<<RF12_EX)|(1<<RF12_DC));                                       // RX off       
       rfm_status = RF12_STATUS_IDLE;
       break;
      case RF12_STATUS_INIT_AM:

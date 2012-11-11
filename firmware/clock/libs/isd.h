@@ -3,8 +3,8 @@
 // #############################################################################
 // # isd.h - Header: ISD2590 speech handler                                    #
 // #############################################################################
-// #              Version: 2.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-11 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -30,6 +30,7 @@
  void AbortPlaying( void );
  void SayTime( uint8_t h, uint8_t m );
  uint8_t CountSounds( void );
+ void SetCountSounds( uint8_t count );
  void PlaySound( uint8_t s );
  void PlayNumber( uint8_t n );
  void AnalyzeSpeechISD( void );

@@ -3,8 +3,8 @@
 // #############################################################################
 // # uart.c - UART routines                                                    #
 // #############################################################################
-// #              Version: 2.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-11 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -42,6 +42,17 @@
   {
    while (!(UCSRA & (1 << UDRE)));
    UDR = c;
+  }
+
+
+ // --- Print 8bit value ---
+ void PutInt8( uint8_t i )
+  {
+    PutChar('0'+((i / 100) % 10));
+    PutChar('0'+((i / 10) % 10));
+    PutChar('0'+(i % 10));
+    PutChar('\r');
+    PutChar('\n');
   }
 
 

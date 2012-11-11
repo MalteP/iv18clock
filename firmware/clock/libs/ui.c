@@ -3,8 +3,8 @@
 // #############################################################################
 // # ui.c - User interface                                                     #
 // #############################################################################
-// #              Version: 2.1 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-11 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
+// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -64,6 +64,7 @@
  uint8_t eeRemoteAddr EEMEM;
  uint8_t eeRemoteCode EEMEM;
  uint8_t eeDaylightSavingTime EEMEM;
+ uint8_t eeAlarmMode EEMEM;
 
 
  void UI( void ) 
@@ -106,6 +107,7 @@
    uint8_t remote_addr;
    uint8_t remote_code;
    uint8_t daylight_saving_time;
+   uint8_t alarm_mode;
    InitRandom(sounds-1);
 
    // Init
@@ -150,14 +152,14 @@
     } 
 
    alarm = eeprom_read_byte(&eeAlarm);
-   if(alarm>4)
+   if(alarm>15)
     {
      alarm = 0;
      eeprom_write_byte(&eeAlarm, alarm);
     } 
 
    dim = eeprom_read_byte(&eeDim);
-   if(dim>1)
+   if(dim>4)
     {
      dim=0;
      eeprom_write_byte(&eeDim, dim);
@@ -287,12 +289,19 @@
      eeprom_write_byte(&eeDaylightSavingTime, daylight_saving_time);
     }   
 
+   alarm_mode = eeprom_read_byte(&eeAlarmMode);
+   if(alarm_mode>1)
+    {
+     alarm_mode=0;
+     eeprom_write_byte(&eeAlarmMode, alarm_mode);
+    }
+
    // Init finished, start main loop
    while(1)
     {
      GetKeys();
      PollISD();
-     PollAlarm( hour, min, wsound );
+     PollAlarm( hour, min, sec, wsound );
      PollRFM();
 
      // Cursor blink and rotation for "random" data
@@ -320,7 +329,7 @@
        // Should be called every second (for snooze function)
        TickAlarm();       
        // Check if we can reduce display brightness
-       if(dim!=0) { if(GetADC(0)>dimval&&!RunningAlarm()) SetDim(1); else SetDim(0); } else SetDim(0);
+       if(dim!=0) { if(GetADC(0)>dimval&&!RunningAlarm()) SetDim(dim); else SetDim(0); } else SetDim(0);
        // New calculation if needed
        moon = 0xFF;
        // Timer for wireless plug auto switch off
@@ -448,28 +457,158 @@
         if(keys & (1<<KEY_MINUS)) { menue--; keys |= (1<<KEY_HANDLED); }        
         break;
        case 5:
-        // Screen #05 Alarm off/1/2/3/4
-        if(alarm!=0) 
-         { 
-          segdata[1]=20;
-          segdata[2]=31;
-          segdata[3]=alarm;
-          segdata[4]=59;
-          DisplayConvertDot( alrm[alarm-1].hour, ( void* ) segdata+5, ( void* ) segdata+6 );
-          DisplayConvert( alrm[alarm-1].min, ( void* ) segdata+7, ( void* ) segdata+8 );                     
+        // Screen #05 Choose alarm
+        if(alarm_mode==0)
+         {
+          // Single alarm time
+          submenue_tmp = submenue;
+          switch( submenue_tmp )
+           {
+            case 0:
+             if(alarm&(1<<0)) alarm_tmp=1;
+              else if(alarm&(1<<1)) alarm_tmp=2;
+               else if(alarm&(1<<2)) alarm_tmp=3;
+                else if(alarm&(1<<3)) alarm_tmp=4;    
+                 else alarm_tmp=0;
+             if(alarm_tmp!=0)
+              {
+               segdata[1]=20;
+               segdata[2]=31;
+               segdata[3]=alarm_tmp;
+               segdata[4]=59;
+               DisplayConvertDot( alrm[alarm_tmp-1].hour, ( void* ) segdata+5, ( void* ) segdata+6 );
+               DisplayConvert( alrm[alarm_tmp-1].min, ( void* ) segdata+7, ( void* ) segdata+8 );             
+              } else {
+               segdata[1]=20;
+               segdata[2]=31;
+               segdata[3]=59;
+               segdata[4]=59;
+               segdata[5]=34;
+               segdata[6]=25;
+               segdata[7]=25;
+               segdata[8]=59;             
+              }      
+             if(keys & (1<<KEY_OK)) { if(CanDisableAlarm()) { DisableAlarm(); } else { submenue++; } keys |= (1<<KEY_LONG); keys |= (1<<KEY_HANDLED); }
+             if(keys & (1<<KEY_PLUS)) { menue++; keys |= (1<<KEY_HANDLED); }
+             if(keys & (1<<KEY_MINUS)) { menue--; keys |= (1<<KEY_HANDLED); }
+             break;
+            case 1:
+             if(alarm_tmp!=0)
+              {
+               segdata[1]=20;
+               segdata[2]=31;
+               if(blink==0) segdata[3]=alarm_tmp; else segdata[3]=59;
+               segdata[4]=59;
+               DisplayConvertDot( alrm[alarm_tmp-1].hour, ( void* ) segdata+5, ( void* ) segdata+6 );
+               DisplayConvert( alrm[alarm_tmp-1].min, ( void* ) segdata+7, ( void* ) segdata+8 );             
+              } else {
+               segdata[1]=20;
+               segdata[2]=31;
+               segdata[3]=59;
+               segdata[4]=59;
+               if(blink==0)
+                {
+                 segdata[5]=34;
+                 segdata[6]=25;
+                 segdata[7]=25; 
+                } else {
+                 segdata[5]=59;
+                 segdata[6]=59;
+                 segdata[7]=59;                 
+                }   
+               segdata[8]=59;              
+              }
+             if(keys & (1<<KEY_OK)) { if(CanDisableAlarm()) { DisableAlarm(); } else { if(keys & (1<<KEY_HOLD)) { alarm_tmp=0; } submenue++; } keys &= ~(1<<KEY_LONG); keys |= (1<<KEY_HANDLED); }
+             if(keys & (1<<KEY_PLUS)) { alarm_tmp++; if(alarm_tmp>4) alarm_tmp=0; keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+             if(keys & (1<<KEY_MINUS)) { if(alarm_tmp==0) alarm_tmp=4; else alarm_tmp--; keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
+             break;            
+            case 2:
+             if(alarm_tmp!=0)
+              { 
+               alarm=(1<<(alarm_tmp-1));
+              } else {
+               alarm=0;
+              }
+             eeprom_write_byte(&eeAlarm, alarm);
+             submenue = 0;
+             break;
+            default:
+             submenue = 0;
+             break;
+           }
          } else {
-          segdata[1]=59;
-          segdata[2]=20;
-          segdata[3]=31;
-          segdata[4]=59;
-          segdata[5]=34;
-          segdata[6]=25;
-          segdata[7]=25; 
-          segdata[8]=59;
-         }
-        if(keys & (1<<KEY_OK)) { if(CanDisableAlarm()) { DisableAlarm(); } else { if(keys & (1<<KEY_HOLD)) { alarm=0; } else { alarm++; if(alarm>4) alarm=0; } eeprom_write_byte(&eeAlarm, alarm); } keys |= (1<<KEY_LONG); keys |= (1<<KEY_HANDLED); }
-        if(keys & (1<<KEY_PLUS)) { menue++; keys |= (1<<KEY_HANDLED); }
-        if(keys & (1<<KEY_MINUS)) { menue--; keys |= (1<<KEY_HANDLED); }		  
+          // Multiple alarm times
+          submenue_tmp = submenue;
+          switch( submenue_tmp )
+           {
+            case 0:
+             if(alarm!=0)
+              {
+               segdata[1]=20;
+               segdata[2]=31;
+               segdata[3]=59;
+               segdata[4]=59;
+               segdata[5]=34;
+               segdata[6]=33;
+               segdata[7]=59;
+               segdata[8]=59;             
+              } else {
+               segdata[1]=20;
+               segdata[2]=31;
+               segdata[3]=59;
+               segdata[4]=59;
+               segdata[5]=34;
+               segdata[6]=25;
+               segdata[7]=25;
+               segdata[8]=59;             
+              }
+             if(keys & (1<<KEY_OK)) { if(CanDisableAlarm()) { DisableAlarm(); } else { submenue++; alarm_tmp=1; } keys |= (1<<KEY_LONG); keys |= (1<<KEY_HANDLED); }
+             if(keys & (1<<KEY_PLUS)) { menue++; keys |= (1<<KEY_HANDLED); }
+             if(keys & (1<<KEY_MINUS)) { menue--; keys |= (1<<KEY_HANDLED); }            
+             break;
+            case 1:
+             segdata[1]=20;
+             segdata[2]=31;
+             segdata[3]=alarm_tmp;
+             segdata[4]=59;
+             if(alarm&(1<<(alarm_tmp-1)))
+              {
+               if(blink==0)
+                {
+                 DisplayConvertDot( alrm[alarm_tmp-1].hour, ( void* ) segdata+5, ( void* ) segdata+6 );
+                 DisplayConvert( alrm[alarm_tmp-1].min, ( void* ) segdata+7, ( void* ) segdata+8 ); 
+                } else {
+                 segdata[5]=59;
+                 segdata[6]=59;
+                 segdata[7]=59;
+                 segdata[8]=59; 
+                }
+              } else {
+               if(blink==0)
+                {
+                 segdata[5]=34;
+                 segdata[6]=25;
+                 segdata[7]=25;
+                } else {
+                 segdata[5]=59;
+                 segdata[6]=59;
+                 segdata[7]=59;
+                }
+               segdata[8]=59;         
+              }
+             if(keys & (1<<KEY_OK)) { if(CanDisableAlarm()) { DisableAlarm(); } else { if(keys & (1<<KEY_HOLD)) { alarm=0; submenue++; } else { if(alarm_tmp<4) alarm_tmp++; else submenue++; } } keys &= ~(1<<KEY_LONG); keys |= (1<<KEY_HANDLED); }
+             if(keys & (1<<KEY_PLUS)) { alarm |= (1<<(alarm_tmp-1)); keys |= (1<<KEY_HANDLED); }
+             if(keys & (1<<KEY_MINUS)) { alarm &= ~(1<<(alarm_tmp-1)); keys |= (1<<KEY_HANDLED); }             
+             break;
+            case 2:
+             eeprom_write_byte(&eeAlarm, alarm);
+             submenue = 0;
+             break;
+            default:
+             submenue = 0;
+             break;            
+           }         
+         }		  
         break; 
        case 6:
         // Screen #06 Goto setup?
@@ -569,7 +708,11 @@
           case 4:
            // Save to eep
            eeprom_write_block((void *)&alrm[alarm_tmp-1],&eeAlrm[alarm_tmp-1],sizeof(tAlarm));
-           if(alarm==0) { alarm = alarm_tmp; eeprom_write_byte(&eeAlarm, alarm); } // Activate modified alarm now if no other active
+           if(alarm==0) // Activate modified alarm now if no other active
+            {
+             alarm=(1<<(alarm_tmp-1));
+             eeprom_write_byte(&eeAlarm, alarm);
+            }
            submenue=0;
            break;
           default:
@@ -658,12 +801,11 @@
            segdata[4]=59;
            if(blink==0) segdata[5]=volume; else segdata[5]=59;
            segdata[6]=59;
-
            segdata[7]=59;
            segdata[8]=59;           
            if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
-           if(keys & (1<<KEY_PLUS)) { if(volume<7) { volume++; SetVolume(volume); PlayNumber(volume); if(volume<7) keys |= (1<<KEY_REPEAT); } else { volume=7; SetVolume(volume); PlayNumber(volume); } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }
-           if(keys & (1<<KEY_MINUS)) { if(volume>0) { volume--; SetVolume(volume); PlayNumber(volume); if(volume>0) keys |= (1<<KEY_REPEAT); } else { volume=0; SetVolume(volume); PlayNumber(volume); } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }           
+           if(keys & (1<<KEY_PLUS)) { if(volume<7) { volume++; SetVolume(volume); if(volume!=1) PlayNumber(volume); else PlayNumber(17); if(volume<7) keys |= (1<<KEY_REPEAT); } else { volume=7; SetVolume(volume); PlayNumber(volume); } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(volume>0) { volume--; SetVolume(volume); if(volume!=1) PlayNumber(volume); else PlayNumber(17); if(volume>0) keys |= (1<<KEY_REPEAT); } else { volume=0; SetVolume(volume); PlayNumber(volume); } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }           
            break;
           case 2:
            // Save to eep
@@ -912,11 +1054,50 @@
            segdata[6]=24;
            segdata[7]=39; 
            segdata[8]=59;
-           if(keys & (1<<KEY_OK)) { submenue++; min_tmp=alarmtime; keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
            if(keys & (1<<KEY_PLUS)) { menue++; keys |= (1<<KEY_HANDLED); }
            if(keys & (1<<KEY_MINUS)) { menue--; keys |= (1<<KEY_HANDLED); }
            break;
-          case 1: 
+          case 1:
+           // Alarm mode (single / multi)
+           segdata[1]=20;
+           segdata[2]=31;
+           segdata[3]=59;
+           if(blink==0)
+            {
+             if(alarm_mode==0)
+              {
+               segdata[4]=38; // single
+               segdata[5]=28;          
+               segdata[6]=33; 
+               segdata[7]=26; 
+               segdata[8]=31;
+              } else {
+               segdata[4]=32; // multi
+               segdata[5]=40;          
+               segdata[6]=31; 
+               segdata[7]=39; 
+               segdata[8]=28;
+              }
+            } else {
+             segdata[4]=59;
+             segdata[5]=59;          
+             segdata[6]=59; 
+             segdata[7]=59; 
+             segdata[8]=59; 
+            }
+           if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_PLUS)) { if(alarm_mode==0) { alarm_mode=1; } else { alarm_mode=0; } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; }
+           if(keys & (1<<KEY_MINUS)) { if(alarm_mode==0) { alarm_mode=1; } else { alarm_mode=0; } keys |= (1<<KEY_HANDLED); blink=0; blink_pre=0; } 
+           break;         
+          case 2:
+           alarm = 0;
+           eeprom_write_byte(&eeAlarm, alarm);
+           eeprom_write_byte(&eeAlarmMode, alarm_mode);
+           min_tmp=alarmtime;
+           submenue++;
+           break;
+          case 3: 
            // Alarm length
            segdata[1]=20;
            segdata[2]=31;
@@ -929,13 +1110,13 @@
            if(keys & (1<<KEY_PLUS)) { if(min_tmp<10) { min_tmp++; } else { min_tmp=1; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
            if(keys & (1<<KEY_MINUS)) { if(min_tmp>1) { min_tmp--; } else { min_tmp=10; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }        
            break;
-          case 2:
+          case 4:
            alarmtime=min_tmp;
            eeprom_write_byte(&eeAlarmtime, alarmtime);
            min_tmp=snoozetime; 
            submenue++;
            break;
-          case 3: 
+          case 5: 
            // Snooze length
            segdata[1]=38;
            segdata[2]=33;
@@ -964,12 +1145,12 @@
            if(keys & (1<<KEY_PLUS)) { if(min_tmp<10) { min_tmp++; } else { min_tmp=0; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
            if(keys & (1<<KEY_MINUS)) { if(min_tmp>0) { min_tmp--; } else { min_tmp=10; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }        
            break;
-          case 4:
+          case 6:
            snoozetime=min_tmp;
            eeprom_write_byte(&eeSnoozetime, snoozetime);
            if(snoozetime!=0) { min_tmp=tries; submenue++; } else submenue=0;
            break;
-          case 5: 
+          case 7: 
            // Tries (skip if snooze disabled)
            segdata[1]=39;
            segdata[2]=37;
@@ -982,7 +1163,7 @@
            if(keys & (1<<KEY_PLUS)) { if(min_tmp<10) { min_tmp++; } else { min_tmp=2; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }
            if(keys & (1<<KEY_MINUS)) { if(min_tmp>2) { min_tmp--; } else { min_tmp=10; } keys |= (1<<KEY_HANDLED); keys |= (1<<KEY_REPEAT); blink=0; blink_pre=0; }        
            break;
-          case 6: 
+          case 8: 
            tries=min_tmp;
            eeprom_write_byte(&eeTries, tries);
            submenue = 0;
@@ -1021,7 +1202,6 @@
             {
              segdata[5]=34;
              if(wireless_function!=0) { segdata[6]=33; segdata[7]=59; } else { segdata[6]=25; segdata[7]=25; }
-
             } else {
              segdata[5]=59;
              segdata[6]=59;
@@ -1197,16 +1377,56 @@
         break;
        case 17:
         // Screen #17 Setup dim feature
-        segdata[1]=23;
-        segdata[2]=28;
-        segdata[3]=32;
-        segdata[4]=59;
-        segdata[5]=34;
-        if(dim!=0) { segdata[6]=33; segdata[7]=59; } else { segdata[6]=25; segdata[7]=25; }
-        segdata[8]=59;
-        if(keys & (1<<KEY_OK)) { if(dim==0) dim=1; else dim=0; eeprom_write_byte(&eeDim, dim); keys |= (1<<KEY_HANDLED); }
-        if(keys & (1<<KEY_PLUS)) { keys |= (1<<KEY_HANDLED); }
-        if(keys & (1<<KEY_MINUS)) { menue--; keys |= (1<<KEY_HANDLED); }
+        submenue_tmp = submenue;
+        switch( submenue_tmp )
+         {
+          case 0:  
+           // Enter to setup 
+           segdata[1]=23;
+           segdata[2]=28;
+           segdata[3]=32;
+           segdata[4]=59;
+           segdata[5]=38;
+           segdata[6]=24;
+           segdata[7]=39; 
+           segdata[8]=59;
+           if(keys & (1<<KEY_OK)) { submenue++; keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_PLUS)) { keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_MINUS)) { menue--; keys |= (1<<KEY_HANDLED); }
+           break;
+          case 1:
+           // Setup dim value
+           segdata[1]=23;
+           segdata[2]=28;
+           segdata[3]=32;
+           segdata[4]=59;
+           if(dim!=0)
+            {
+             if(blink==0) segdata[5]=dim; else segdata[5]=59;
+             segdata[6]=59;
+             segdata[7]=59;            
+            } else {
+             if(blink==0)
+              {
+               segdata[5]=34;
+               segdata[6]=25;
+               segdata[7]=25;
+              } else {
+               segdata[5]=59;
+               segdata[6]=59;
+               segdata[7]=59;
+              }
+            }
+           segdata[8]=59;
+           SetDim(dim); // For preview           
+           if(keys & (1<<KEY_OK)) { eeprom_write_byte(&eeDim, dim); submenue++; keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_PLUS)) { if(dim<4) dim++; blink=0; keys |= (1<<KEY_HANDLED); }
+           if(keys & (1<<KEY_MINUS)) { if(dim>0) dim--; blink=0; keys |= (1<<KEY_HANDLED); }           
+           break;
+          default:
+           submenue = 0;
+           break;
+         }
         break;
        default:
         // This should not happen... ;-)
@@ -1305,6 +1525,7 @@
             break;     
            case 75: // K: analyze speech samples in memory
             RecordMode(0);
+            segdata[0]=59;
             segdata[1]=20;
             segdata[2]=33;
             segdata[3]=20;
@@ -1324,17 +1545,30 @@
             segdata[6]=34;
             segdata[7]=23; 
             segdata[8]=24;
-            break;                  
+            break;  
+           case 76: // L: get wsound count
+            PutInt(CountSounds());
+            break;            
+           case 77: // M: set wsound count
+            uart_temp = uart; // copy command, check next byte in rx buffer
+            break;                            
           }
         } else {
-         switch(uart_temp)
+         if(uart>0)
           {
-           case 70:
-            PlayNumber(uart);
-            UDR = 43; // +: OK         
-            break;
+           switch(uart_temp)
+            {
+             case 70:
+              PlayNumber(uart-1);
+              UDR = 43; // +: OK         
+              break;
+             case 77:
+              SetCountSounds(uart-1);
+              UDR = 43; // +: OK         
+              break;
+            }
+           uart_temp = 0;
           }
-         if(uart>0) uart_temp = 0;
         } 
       }
     } 

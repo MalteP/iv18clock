@@ -91,6 +91,9 @@ sym: $(TARGET).sym
 program:
 	./$(LOADER) -d $(LOADER_COM) -b $(LOADER_BAUD) -r $(LOADER_CHAR) -p $(TARGET).hex
 
+progeep:
+	./$(LOADER) -d $(LOADER_COM) -b $(LOADER_BAUD) -r $(LOADER_CHAR) -p $(TARGET).eep
+
 .SUFFIXES: .elf .hex .eep .lss .sym
 
 .elf.hex:

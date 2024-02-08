@@ -1,10 +1,10 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
 // # ui.c - User interface                                                     #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -25,19 +25,19 @@
  #include <avr/wdt.h>
  #include <avr/interrupt.h>
  #include <avr/eeprom.h>
- #include "libs/vfd.h"
- #include "libs/i2c.h"
- #include "libs/key.h"
- #include "libs/isd.h"
- #include "libs/adc.h"
- #include "libs/uart.h"
- #include "libs/alarm.h"
- #include "libs/random.h"
- #include "libs/isd.h"
- #include "libs/moon.h"
- #include "libs/rfm.h"
- #include "libs/ui.h"
- #include "libs/portdef.h"
+ #include "vfd.h"
+ #include "i2c.h"
+ #include "key.h"
+ #include "isd.h"
+ #include "adc.h"
+ #include "uart.h"
+ #include "alarm.h"
+ #include "random.h"
+ #include "isd.h"
+ #include "moon.h"
+ #include "rfm.h"
+ #include "ui.h"
+ #include "portdef.h"
 
  // Reset vector for bootloader
  // (16 bit words, 32768 x 8bit -> 16384 words = 0x4000 words ) 

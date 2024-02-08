@@ -1,10 +1,13 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
-// # i2c.h - Header: I2C routines for DS75 and DS1338                          #
+// # moon.c - Moon phase calculation                                           #
+// # Using code from http://www.voidware.com/moon_phase.htm                    #
+// # The non floating point (second) algorithm there seems to be accurate      #
+// # enough for our purpose :-)                                                #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -20,26 +23,28 @@
 // #      with this program; if not, see <http://www.gnu.org/licenses/>.       #
 // #############################################################################
 
-#ifndef I2C_H
- #define I2C_H
+  
+ #include <avr/io.h>
+ #include "moon.h"
 
- #define DS75ADDR          0x9E
- #define DS1338ADDR        0xD0
- #define DS1338STATUS      0x10 // SQW_OUT, 1Hz
- #define DS1338STATUS_TEST 0x13 // SQW_OUT, 32.768kHz
 
- extern volatile uint8_t ClkChng;
- 
- void InitI2C( void );
- void InitRTC( void );
- void InitDS75( void );
- void DS75read( uint8_t *dshigh, uint8_t *dslow, uint8_t *dssign );
- uint8_t BCDtoDEC( uint8_t wert );
- void DS1338read( uint8_t *sec, uint8_t *min, uint8_t *hour, uint8_t *wday, uint8_t *day, uint8_t *mon, uint8_t *year );
- void DS1338write_time( uint8_t sec, uint8_t min, uint8_t hour );
- void DS1338write_date( uint8_t wday, uint8_t day, uint8_t mon, uint8_t year );
- uint8_t DS1338read_status( void );
- void DS1338write_status( uint8_t status );
- uint8_t DaylightSaving( uint8_t *sec, uint8_t *min, uint8_t *hour, uint8_t *wday, uint8_t *day, uint8_t *mon );
-
-#endif
+ // --- Calculates the moon phase (0-7), accurate to 1 segment ---
+ // 0 => new moon 
+ // 4 => full moon
+ uint8_t Moon_phase(uint16_t year, uint16_t month, uint16_t day)
+ {
+  uint16_t g, e;
+  if (month == 1) --day;
+   else if (month == 2) day += 30;
+    else // m >= 3
+     {
+      day += 28 + (month-2)*3059/100;
+      // adjust for leap years
+      if (!(year & 3)) ++day;
+      if ((year%100) == 0) --day;
+     }
+  g = (year-1900)%19 + 1;
+  e = (11*g + 18) % 30;
+  if ((e == 25 && g > 11) || e == 24) e++;
+  return ((((e + day)*6+11)%177)/22 & 7);
+ }

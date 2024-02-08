@@ -1,5 +1,5 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
 // # rfm.c - RFM12 Wireless routines                                           #
 // # Thanks to Benedikt K. and das-labor.org for their RFM12 sample codes!     #
@@ -7,7 +7,7 @@
 // # original written by Roger Needham and David Wheeler.                      # 
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -40,10 +40,10 @@
  #include <avr/interrupt.h>
  #include <util/delay.h>
  #include <util/crc16.h>
- #include "libs/rfm.h"
- #include "libs/portdef.h"
- #include "libs/uart.h"
- #include "libs/rfm-cryptokey.h"
+ #include "rfm.h"
+ #include "portdef.h"
+ #include "uart.h"
+ #include "rfm-cryptokey.h"
 
  uint16_t rfm_crc( void );
  void xxtea_crypt( uint32_t* v, uint8_t n );

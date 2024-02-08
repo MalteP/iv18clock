@@ -1,10 +1,10 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
-// # random.c - Functions to create some 'random' data                         #
+// # adc.c - Analog digital converter handler                                  #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -19,29 +19,31 @@
 // #  You should have received a copy of the GNU General Public License along  #
 // #      with this program; if not, see <http://www.gnu.org/licenses/>.       #
 // #############################################################################
-  
+
  #include <avr/io.h>
- #include "libs/random.h"
+ #include "adc.h"
+ #include "portdef.h"
 
- volatile uint8_t random;
- volatile uint8_t max_val;
-
-
- void InitRandom( uint8_t max )
+ 
+ // --- Initialize the ADC registers --- 
+ void InitADC( void )
   {
-   random = 0;
-   max_val = max;
+   ADMUX &= ~((1<<REFS1) | (1<<REFS0)); // Internal Vref turned off
+   ADCSRA = (1<<ADPS1) | (1<<ADPS0);    // Prescaler Clock / 8
+   ADCSRA |= (1<<ADEN);                 // Enable ADC
+ 
+   // Dummy readout
+   ADCSRA |= (1<<ADSC);
+   while (ADCSRA & (1<<ADSC) );
+   ADCW;
   }
 
 
- void RotateRandom( void )
+ // --- Get channel value ---
+ uint16_t GetADC(uint8_t chan)
   {
-   random++;
-   if(random>max_val) random=0;
-  } 
-
-
- uint8_t GetRandom( void ) 
-  {
-   return random;
+   ADMUX = (ADMUX & ~(0x1F)) | (chan & 0x1F);
+   ADCSRA |= (1<<ADSC);                 // Single conversion
+   while (ADCSRA & (1<<ADSC) );
+   return ADCW;
   }

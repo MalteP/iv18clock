@@ -1,10 +1,10 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
-// # alarm.h - Header: Alarm handler                                           #
+// # voicetab.h - Header: Voice decode table                                   #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -20,36 +20,19 @@
 // #      with this program; if not, see <http://www.gnu.org/licenses/>.       #
 // #############################################################################
 
-#ifndef ALARM_H
- #define ALARM_H
+#ifndef VOICETAB_H
+ #define VOICETAB_H
+  
+ #include <avr/pgmspace.h>
 
- #define ALARM_STATUS_OFF     0 // Alarm currently inactive
- #define ALARM_STATUS_INIT    1 // Alarm waiting for other events
- #define ALARM_STATUS_ON      2 // Alarm active
- #define ALARM_STATUS_SNOOZE  3 // Snooze active
- #define ALARM_STATUS_DISABLE 4 // Alarm should be disabled
- #define ALARM_STATUS_WAIT    5 // Alarm is disabled but hour, min and sec matching choosen alarm time, so wait 1 second to go by
- 
- typedef struct {
-  uint8_t hour;
-  uint8_t min;
- } tAlarm;
+ // for hours
+ PROGMEM const uint8_t voicetab_a[21] = {
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 12
+ };
 
- extern volatile uint8_t alarm;      // Which alarm is active?
- extern volatile tAlarm alrm[4];     // Structure for times.
- 
- extern volatile uint8_t alarmtime;  // Each in minutes
- extern volatile uint8_t snoozetime;
- extern volatile uint8_t tries;
-
- void InitAlarm( void );
- void TickAlarm( void );
- void PollAlarm( uint8_t hour, uint8_t min, uint8_t sec, uint8_t wsound );
- uint8_t AlarmWait( void );
- void AlarmSetInitFinished( void ); 
- uint8_t RunningAlarm( void );
- uint8_t RunningSnooze( void );
- uint8_t CanDisableAlarm( void );
- void DisableAlarm( void );
+ // 20, 30, 40, 50
+ PROGMEM const uint8_t voicetab_b[4] = {
+  12, 13, 14, 15
+ };
 
 #endif

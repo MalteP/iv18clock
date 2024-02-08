@@ -22,7 +22,7 @@ TARGET = main
 OBJDIR = .
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c libs/vfd.c libs/twimaster.c libs/i2c.c libs/adc.c libs/uart.c libs/isd.c libs/key.c libs/random.c libs/alarm.c libs/moon.c libs/rfm.c libs/ui.c
+SRC = $(TARGET).c vfd.c twimaster.c i2c.c adc.c uart.c isd.c key.c random.c alarm.c moon.c rfm.c ui.c
 
 # List Assembler source files here.
 ASRC = 

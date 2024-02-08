@@ -1,10 +1,13 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
-// # uart.h - Header: UART routines                                            #
+// # moon.h - Header: Moon phase calculation                                   #
+// # Using code from http://www.voidware.com/moon_phase.htm                    #
+// # The non floating point (second) algorithm there seems to be accurate      #
+// # enought for our purpose :-)                                               #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -20,16 +23,9 @@
 // #      with this program; if not, see <http://www.gnu.org/licenses/>.       #
 // #############################################################################
 
-#ifndef UART_H
- #define UART_H
-
- #define F_CPU 8000000UL
- #define BAUD 38400L
- #define UBRR_VAL ((F_CPU+BAUD*8)/(BAUD*16)-1)
-  
- void InitUART( void );
- void PutChar( uint8_t c );
- void PutInt8( uint8_t i );
- void PutInt( uint16_t i );
+#ifndef MOON_H
+ #define MOON_H
+ 
+ uint8_t Moon_phase(uint16_t year, uint16_t month, uint16_t day);
 
 #endif

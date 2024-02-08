@@ -1,10 +1,10 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
-// # rfm-cryptokey.h - Header: XXTEA Key for encryption / decryption           #
+// # vfd.h - Header: VFD multiplexing and decoding handler                     #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -20,9 +20,26 @@
 // #      with this program; if not, see <http://www.gnu.org/licenses/>.       #
 // #############################################################################
 
-#ifndef RFM_CRYPTOKEY_H
- #define RFM_CRYPTOKEY_H
+#ifndef VFD_H
+ #define VFD_H
 
- static uint32_t k[] = { 0x01234567, 0x89ABCDEF, 0x01234567, 0x89ABCDEF }; // 128 bit key
+ extern volatile uint8_t segdata[9];		// Array for segment data
+ extern volatile uint8_t segcounter;		// Counter for grid position
+ extern volatile uint8_t dimcounter;		// Counter for PWM dimming
+    
+ void InitVFD( void );
+ void DisplayStb( void );
+ void GridShiftOut( uint8_t );
+ void SegShiftOut( uint8_t data );
+ void DontCare( void );
+ void SetDim( uint8_t d );
+ void DisplayConvert( uint8_t val, uint8_t *digit_ten, uint8_t *digit_one );
+ void DisplayConvertDot( uint8_t val, uint8_t *digit_ten, uint8_t *digit_one );
+ void DisplayConvertNoZero( uint8_t val, uint8_t *digit_ten, uint8_t *digit_one );
+ void WeekdayConvert( uint8_t val, uint8_t *digit_one, uint8_t *digit_two );
+ uint8_t delimiter_convert_h( uint8_t id );
+ uint8_t delimiter_convert_m( uint8_t id );
+ uint8_t moon_convert_a( uint8_t id );
+ uint8_t moon_convert_b( uint8_t id );
 
 #endif

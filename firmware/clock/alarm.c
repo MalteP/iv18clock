@@ -1,10 +1,10 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
 // # alarm.c - Alarm handler                                                   #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -22,11 +22,11 @@
 
  #include <avr/io.h>
  #include <avr/interrupt.h>
- #include "libs/portdef.h"
- #include "libs/isd.h"
- #include "libs/random.h"
- #include "libs/vfd.h"
- #include "libs/alarm.h"
+ #include "portdef.h"
+ #include "isd.h"
+ #include "random.h"
+ #include "vfd.h"
+ #include "alarm.h"
 
  volatile uint8_t alarm;      // Which alarm is active?
  volatile tAlarm alrm[4];     // Structure for times.

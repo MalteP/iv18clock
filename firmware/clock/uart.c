@@ -1,10 +1,10 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
-// # key.h - Header: Key handler                                               #
+// # uart.c - UART routines                                                    #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -20,27 +20,49 @@
 // #      with this program; if not, see <http://www.gnu.org/licenses/>.       #
 // #############################################################################
 
-#ifndef KEY_H
- #define KEY_H
-  
- #define KEY_OK      0 // Key ok pressed now
- #define KEY_PLUS    1 // Key plus pressed now
- #define KEY_MINUS   2 // Key minus pressed now
- #define KEY_LONG    4 // Key can be pressed longer to retrigger handled with HOLD flag set
- #define KEY_REPEAT  5 // Key auto repeat
- #define KEY_HOLD    6 // Flag that this key is held
- #define KEY_HANDLED 7 // Flag that this key was handled
+ #include <avr/io.h>
+ #include "uart.h"
 
- #define DEBOUNCE_VAL 0x01FF
+ 
+ // --- Initialize the UART --- 
+ void InitUART( void )
+  {
+   UCSRB |= (1 << RXEN) | (1 << TXEN);				// Enable UART TX 
+   UCSRC |= (1 << URSEL) | (1 << UCSZ1) | (1 << UCSZ0);		// 8N1, 38400 baud 
+   UBRRH = (UBRR_VAL >> 8);
+   UBRRL = (UBRR_VAL & 0xFF);
 
- // Increase speed after n+1 ticks
- #define TICK_SPEED   2
- #define TICK_VAL_A   0x3F00
- #define TICK_VAL_B   0x1000
+   // Flush Receive-Buffer
+   do { UDR; } while ( UCSRA & (1 << RXC) );
+  }
 
- extern volatile uint8_t keys;
-  
- void InitKeys( void );
- void GetKeys( void );
-   
-#endif
+
+ // --- Print character ---
+ void PutChar( uint8_t c )
+  {
+   while (!(UCSRA & (1 << UDRE)));
+   UDR = c;
+  }
+
+
+ // --- Print 8bit value ---
+ void PutInt8( uint8_t i )
+  {
+    PutChar('0'+((i / 100) % 10));
+    PutChar('0'+((i / 10) % 10));
+    PutChar('0'+(i % 10));
+    PutChar('\r');
+    PutChar('\n');
+  }
+
+
+ // --- Print 16bit value ---
+ void PutInt( uint16_t i )
+  {
+    PutChar('0'+(i / 1000));
+    PutChar('0'+((i / 100) % 10));
+    PutChar('0'+((i / 10) % 10));
+    PutChar('0'+(i % 10));
+    PutChar('\r');
+    PutChar('\n');
+  }

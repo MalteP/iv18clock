@@ -1,10 +1,10 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
-// # adc.c - Analog digital converter handler                                  #
+// # uart.h - Header: UART routines                                            #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -20,30 +20,16 @@
 // #      with this program; if not, see <http://www.gnu.org/licenses/>.       #
 // #############################################################################
 
- #include <avr/io.h>
- #include "libs/adc.h"
- #include "libs/portdef.h"
+#ifndef UART_H
+ #define UART_H
 
- 
- // --- Initialize the ADC registers --- 
- void InitADC( void )
-  {
-   ADMUX &= ~((1<<REFS1) | (1<<REFS0)); // Internal Vref turned off
-   ADCSRA = (1<<ADPS1) | (1<<ADPS0);    // Prescaler Clock / 8
-   ADCSRA |= (1<<ADEN);                 // Enable ADC
- 
-   // Dummy readout
-   ADCSRA |= (1<<ADSC);
-   while (ADCSRA & (1<<ADSC) );
-   ADCW;
-  }
+ #define F_CPU 8000000UL
+ #define BAUD 38400L
+ #define UBRR_VAL ((F_CPU+BAUD*8)/(BAUD*16)-1)
+  
+ void InitUART( void );
+ void PutChar( uint8_t c );
+ void PutInt8( uint8_t i );
+ void PutInt( uint16_t i );
 
-
- // --- Get channel value ---
- uint16_t GetADC(uint8_t chan)
-  {
-   ADMUX = (ADMUX & ~(0x1F)) | (chan & 0x1F);
-   ADCSRA |= (1<<ADSC);                 // Single conversion
-   while (ADCSRA & (1<<ADSC) );
-   return ADCW;
-  }
+#endif

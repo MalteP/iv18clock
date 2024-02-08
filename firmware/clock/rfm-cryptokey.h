@@ -1,10 +1,10 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
-// # ui.h - Header: User interface                                             #
+// # rfm-cryptokey.h - Header: XXTEA Key for encryption / decryption           #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -20,10 +20,9 @@
 // #      with this program; if not, see <http://www.gnu.org/licenses/>.       #
 // #############################################################################
 
-#ifndef UI_H
- #define UI_H
+#ifndef RFM_CRYPTOKEY_H
+ #define RFM_CRYPTOKEY_H
 
- void UI( void );
- void TestMode( void );
-  
+ static uint32_t k[] = { 0x01234567, 0x89ABCDEF, 0x01234567, 0x89ABCDEF }; // 128 bit key
+
 #endif

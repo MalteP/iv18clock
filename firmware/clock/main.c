@@ -1,10 +1,10 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
 // # main.c - Main function                                                    #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -24,15 +24,15 @@
  #include <avr/wdt.h>
  #include <avr/interrupt.h>
  #include "main.h"
- #include "libs/ui.h"
- #include "libs/vfd.h"
- #include "libs/isd.h"
- #include "libs/i2c.h"
- #include "libs/adc.h"
- #include "libs/uart.h"
- #include "libs/key.h"
- #include "libs/alarm.h"
- #include "libs/rfm.h"
+ #include "ui.h"
+ #include "vfd.h"
+ #include "isd.h"
+ #include "i2c.h"
+ #include "adc.h"
+ #include "uart.h"
+ #include "key.h"
+ #include "alarm.h"
+ #include "rfm.h"
 
 
  int main( void )

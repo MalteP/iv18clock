@@ -1,10 +1,10 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
 // # vfd.c - VFD multiplexing and decoding handler                             #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -50,9 +50,9 @@
  #include <avr/io.h>
  #include <util/delay.h>
  #include <avr/interrupt.h>
- #include "libs/vfd.h"
- #include "libs/portdef.h"
- #include "libs/vfdchar.h"
+ #include "vfd.h"
+ #include "portdef.h"
+ #include "vfdchar.h"
   
  uint8_t dim_val;
 

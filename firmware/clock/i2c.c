@@ -1,10 +1,10 @@
 // #############################################################################
-// #                   --- IW18 VFD Clock Firmware ---                         #
+// #                   --- IV18 VFD Clock Firmware ---                         #
 // #############################################################################
 // # i2c.c - I2C routines for DS75 and DS1338                                  #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #    (c) 08-24 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@poeggel.de     #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -23,9 +23,9 @@
 
  #include <avr/io.h>
  #include <avr/interrupt.h>
- #include "libs/i2c.h"
- #include "libs/i2cmaster.h"
- #include "libs/portdef.h"
+ #include "i2c.h"
+ #include "i2cmaster.h"
+ #include "portdef.h"
 
  volatile uint8_t ClkChng;
  volatile uint8_t dst_status;

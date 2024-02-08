@@ -4,7 +4,7 @@
 // # vfdchar.h - Header: Display character table                               #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #  (c) 08-12 by Malte PÃ¶ggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -40,7 +40,7 @@
   
  #include <avr/pgmspace.h>
 
- const prog_uint8_t chartab[60] = {
+ PROGMEM const uint8_t chartab[60] = {
   238, 36,186,182,116,214,222,164,254,246, // 0...9
   239, 37,187,183,117,215,223,165,255,247, // 0...9 /w dp
   252, 94,202, 62,218,216,206, 92, 72, 46, // A...J
@@ -49,19 +49,19 @@
     2,  8,  4, 32, 64,  1, 17, 72,166,  0
  };
 
- const prog_uint8_t deltab_h[8] = {
+ PROGMEM const uint8_t deltab_h[8] = {
   49, 27, 46, 47, 48, 50, 53, 59
  };
 
- const prog_uint8_t deltab_m[8] = {
+ PROGMEM const uint8_t deltab_m[8] = {
   49, 32, 46, 47, 48, 50, 53, 59
  };
 
- const prog_uint8_t moontab_a[8] = {
+ PROGMEM const uint8_t moontab_a[8] = {
   59, 59, 59,  1, 22, 22, 22, 57
  };
 
- const prog_uint8_t moontab_b[8] = {
+ PROGMEM const uint8_t moontab_b[8] = {
   59,  1, 58, 58, 58, 57, 59, 59
  };
 

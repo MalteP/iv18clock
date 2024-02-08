@@ -4,7 +4,7 @@
 // # i2c.h - Header: I2C routines for DS75 and DS1338                          #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #  (c) 08-12 by Malte PÃ¶ggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -28,7 +28,7 @@
  #define DS1338STATUS      0x10 // SQW_OUT, 1Hz
  #define DS1338STATUS_TEST 0x13 // SQW_OUT, 32.768kHz
 
- volatile uint8_t ClkChng;
+ extern volatile uint8_t ClkChng;
  
  void InitI2C( void );
  void InitRTC( void );

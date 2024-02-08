@@ -4,7 +4,7 @@
 // # alarm.h - Header: Alarm handler                                           #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #  (c) 08-12 by Malte PÃ¶ggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -35,12 +35,12 @@
   uint8_t min;
  } tAlarm;
 
- volatile uint8_t alarm;      // Which alarm is active?
- volatile tAlarm alrm[4];     // Structure for times.
+ extern volatile uint8_t alarm;      // Which alarm is active?
+ extern volatile tAlarm alrm[4];     // Structure for times.
  
- volatile uint8_t alarmtime;  // Each in minutes
- volatile uint8_t snoozetime;
- volatile uint8_t tries;
+ extern volatile uint8_t alarmtime;  // Each in minutes
+ extern volatile uint8_t snoozetime;
+ extern volatile uint8_t tries;
 
  void InitAlarm( void );
  void TickAlarm( void );

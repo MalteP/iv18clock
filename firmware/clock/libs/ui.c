@@ -4,7 +4,7 @@
 // # ui.c - User interface                                                     #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #  (c) 08-12 by Malte PÃ¶ggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -398,7 +398,7 @@
         if(keys & (1<<KEY_MINUS)) { keys |= (1<<KEY_HANDLED); }
         break;
        case 1:
-        // Screen #01 IN Temperature +xx.x °C
+        // Screen #01 IN Temperature +xx.x Â°C
         segdata[1]=28;
         segdata[2]=33;
         if( ds75sign ) segdata[3]=49; else segdata[3]=59;
@@ -411,7 +411,7 @@
         if(keys & (1<<KEY_MINUS)) { menue--; keys |= (1<<KEY_HANDLED); }
         break;
        case 2:
-        // Screen #02 OUT Temperature +xx.x °C
+        // Screen #02 OUT Temperature +xx.x Â°C
         segdata[1]=34;
         segdata[2]=40;
         if( outvalid != 0)

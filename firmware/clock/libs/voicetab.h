@@ -4,7 +4,7 @@
 // # voicetab.h - Header: Voice decode table                                   #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #  (c) 08-12 by Malte PÃ¶ggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -26,12 +26,12 @@
  #include <avr/pgmspace.h>
 
  // for hours
- const prog_uint8_t voicetab_a[21] = {
+ PROGMEM const uint8_t voicetab_a[21] = {
   0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 12
  };
 
  // 20, 30, 40, 50
- const prog_uint8_t voicetab_b[4] = {
+ PROGMEM const uint8_t voicetab_b[4] = {
   12, 13, 14, 15
  };
 

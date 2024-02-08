@@ -4,7 +4,7 @@
 // # vfd.h - Header: VFD multiplexing and decoding handler                     #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #  (c) 08-12 by Malte PÃ¶ggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -23,10 +23,9 @@
 #ifndef VFD_H
  #define VFD_H
 
- // Globals for segment data
- volatile uint8_t segdata[9];		// Array for segment data
- volatile uint8_t segcounter;		// Counter for grid position
- volatile uint8_t dimcounter;           // Counter for PWM dimming
+ extern volatile uint8_t segdata[9];		// Array for segment data
+ extern volatile uint8_t segcounter;		// Counter for grid position
+ extern volatile uint8_t dimcounter;		// Counter for PWM dimming
     
  void InitVFD( void );
  void DisplayStb( void );

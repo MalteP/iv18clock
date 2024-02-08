@@ -4,7 +4,7 @@
 // # key.c - Key handler                                                       #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #  (c) 08-12 by Malte PÃ¶ggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -23,10 +23,13 @@
  #include <avr/io.h>
  #include "libs/key.h"
  #include "libs/portdef.h"
-  
+
+ volatile uint8_t keys;
+
  volatile uint16_t debounce;
  volatile uint16_t tick;
  volatile uint16_t tick_spd;
+
 
  // --- Initialize key ports ---
  void InitKeys( void ) 

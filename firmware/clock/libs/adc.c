@@ -4,7 +4,7 @@
 // # adc.c - Analog digital converter handler                                  #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #  (c) 08-12 by Malte PÃ¶ggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -28,8 +28,6 @@
  // --- Initialize the ADC registers --- 
  void InitADC( void )
   {
-   uint16_t result;
- 
    ADMUX &= ~((1<<REFS1) | (1<<REFS0)); // Internal Vref turned off
    ADCSRA = (1<<ADPS1) | (1<<ADPS0);    // Prescaler Clock / 8
    ADCSRA |= (1<<ADEN);                 // Enable ADC
@@ -37,7 +35,7 @@
    // Dummy readout
    ADCSRA |= (1<<ADSC);
    while (ADCSRA & (1<<ADSC) );
-   result = ADCW;
+   ADCW;
   }
 
 

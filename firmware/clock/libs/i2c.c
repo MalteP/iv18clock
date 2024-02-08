@@ -4,7 +4,7 @@
 // # i2c.c - I2C routines for DS75 and DS1338                                  #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #  (c) 08-12 by Malte PÃ¶ggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -27,7 +27,7 @@
  #include "libs/i2cmaster.h"
  #include "libs/portdef.h"
 
- 
+ volatile uint8_t ClkChng;
  volatile uint8_t dst_status;
  
  
@@ -60,7 +60,7 @@
   
   
  // --- Interrupt on clock change ---
- ISR(SIG_INTERRUPT1) 
+ ISR(INT1_vect)
   {
    ClkChng = 1;                                            // Save that clock has changed
   }

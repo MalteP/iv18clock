@@ -4,7 +4,7 @@
 // # key.h - Header: Key handler                                               #
 // #############################################################################
 // #              Version: 2.2 - Compiler: AVR-GCC 4.5.0 (Linux)               #
-// #  (c) 08-12 by Malte Pöggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
+// #  (c) 08-12 by Malte PÃ¶ggel - www.MALTEPOEGGEL.de - malte@maltepoeggel.de  #
 // #############################################################################
 // #  This program is free software; you can redistribute it and/or modify it  #
 // #   under the terms of the GNU General Public License as published by the   #
@@ -38,7 +38,7 @@
  #define TICK_VAL_A   0x3F00
  #define TICK_VAL_B   0x1000
 
- volatile uint8_t keys;
+ extern volatile uint8_t keys;
   
  void InitKeys( void );
  void GetKeys( void );

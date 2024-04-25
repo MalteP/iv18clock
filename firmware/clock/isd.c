@@ -171,7 +171,7 @@
       {
        if(SpeechCounter<=8)
         {
-         ISDOut( (1<<ISD_MUTE) | ((SpeechVolume&0x07)<<ISD_VOL) );
+         ISDOut( (1<<ISD_MUTE) | (1<<ISD_AMP_EN) | ((SpeechVolume&0x07)<<ISD_VOL) );
          if(SpeechBuffer[(SpeechCounter-1)]!=254) { ISDSay(SpeechBuffer[(SpeechCounter-1)]); SpeechActive=1; }
          SpeechCounter++;
         } else {

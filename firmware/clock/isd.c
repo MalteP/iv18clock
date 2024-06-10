@@ -109,7 +109,7 @@
  void ISDPlay( uint16_t addr )
   {
    ISD_PowerUp();
-   ISDOut( (addr&0x01FF) | (1<<ISD_AMP_EN) | ((SpeechVolume&0x07)<<ISD_VOL) );
+   ISDOut( (addr&0x03FF) | (1<<ISD_AMP_EN) | ((SpeechVolume&0x07)<<ISD_VOL) );
    _delay_us(0.3); // tSET = 300nsec
    ISD_ChipEnable();
   }
@@ -300,7 +300,7 @@
   {
    uint8_t timeout=254;
    ISD_PowerUp();
-   ISDOut( (addr&0x01FF) );
+   ISDOut( (addr&0x03FF) );
    _delay_us(0.3); // tSET = 300nsec
    SpeechActive=1;
    ISD_ChipEnable();
